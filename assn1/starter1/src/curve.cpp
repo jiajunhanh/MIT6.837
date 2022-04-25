@@ -100,8 +100,11 @@ Curve evalBezier(const vector<Vector3f> &P, unsigned steps) {
       T = T.normalized();
 
       if (step == start_step) {
-        B = T + Vector3f{0.f, 0.f, 1.f};
-        B = B.normalized();
+        // To make sure that when the curve is on xy plane, the N will also be on xy plane.
+        B = Vector3f{0.f, 0.f, 1.f};
+        if (T == B) {
+          B = Vector3f{0.f, 1.f, 0.f};
+        }
       }
 
       N = Vector3f::cross(B, T).normalized();
