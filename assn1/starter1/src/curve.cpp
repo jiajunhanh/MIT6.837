@@ -46,10 +46,63 @@ Curve evalBezier(const vector<Vector3f> &P, unsigned steps) {
   }
 
   cerr << "\t>>> Steps (type steps): " << steps << endl;
-  cerr << "\t>>> Returning empty curve." << endl;
+//  cerr << "\t>>> Returning empty curve." << endl;
 
-  // Right now this will just return this empty curve.
-  return Curve();
+  Curve bez_curve{};
+
+  const Matrix4f spline_mat{
+      1, -3, 3, -1,
+      0, 3, -6, 3,
+      0, 0, 3, -3,
+      0, 0, 0, 1
+  };
+
+  const Matrix4f derivative_mat{
+      0, 0, 0, 0,
+      1, 0, 0, 0,
+      0, 2, 0, 0,
+      0, 0, 3, 0
+  };
+
+  auto n_ctr_points = P.size();
+  for (auto piece = 0; piece + 3 < n_ctr_points; piece += 3) {
+    Matrix4f geometry_mat{};
+    for (int i = 0; i < 4; i++) {
+      // Since we don't have Matrix3x4.
+      geometry_mat.setCol(i, Vector4f{P[piece + i], 0});
+    }
+
+    auto bez_mat = geometry_mat * spline_mat;
+    Vector3f N{};
+    Vector3f B{};
+
+    // Make sure to draw the first curve point.
+    unsigned start_step = piece == 0 ? 0 : 1;
+    for (unsigned step = start_step; step <= steps; ++step) {
+      auto t = float(step) / float(steps);
+      Vector4f basis_vec{1.f, t, t * t, t * t * t};
+      Vector4f basis_derivative_vec = derivative_mat * basis_vec;
+
+      auto V_tmp = bez_mat * basis_vec;
+      auto T_tmp = bez_mat * basis_derivative_vec;
+
+      Vector3f V{V_tmp[0], V_tmp[1], V_tmp[2]};
+      Vector3f T{T_tmp[0], T_tmp[1], T_tmp[2]};
+      T = T.normalized();
+
+      if (step == start_step) {
+        B = T + Vector3f{0.f, 0.f, 1.f};
+        B = B.normalized();
+      }
+
+      N = Vector3f::cross(B, T).normalized();
+      B = Vector3f::cross(T, N).normalized();
+
+      bez_curve.emplace_back(CurvePoint{V, T, N, B});
+    }
+  }
+
+  return bez_curve;
 }
 
 Curve evalBspline(const vector<Vector3f> &P, unsigned steps) {
