@@ -145,7 +145,12 @@ Curve evalBspline(const vector<Vector3f> &P, unsigned steps) {
       geometry_mat.setCol(i, Vector4f{P[piece + i], 0});
     }
     geometry_mat = geometry_mat * bsp_mat * bez_mat_inverse;
-    for (int i = 0; i < 4; i++) {
+    if (piece == 0) {
+      Vector3f ctrl_point
+          {geometry_mat(0, 0), geometry_mat(1, 0), geometry_mat(2, 0)};
+      bez_ctrl_points.emplace_back(ctrl_point);
+    }
+    for (int i = 1; i < 4; i++) {
       Vector3f ctrl_point
           {geometry_mat(0, i), geometry_mat(1, i), geometry_mat(2, i)};
       bez_ctrl_points.emplace_back(ctrl_point);
