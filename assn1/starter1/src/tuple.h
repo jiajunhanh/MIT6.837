@@ -1,6 +1,7 @@
 #ifndef TUPLE_H
 #define TUPLE_H
 
+#define _USE_MATH_DEFINES
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>

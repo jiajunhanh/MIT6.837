@@ -37,19 +37,31 @@ Surface quad() {
 
 Surface makeSurfRev(const Curve &profile, unsigned steps) {
   Surface surface;
-  surface = quad();
+  if (profile.empty()) return surface;
 
   if (!checkFlat(profile)) {
     cerr << "surfRev profile curve must be flat on xy plane." << endl;
     exit(0);
   }
 
-  // TODO: Here you should build the surface.  See surf.h for details.
+  auto n_points = unsigned(profile.size());
+  for (unsigned step = 0; step < steps; ++step) {
+    auto m_v = Matrix3f::rotateY(float(M_PI * 2.0 * step / steps));
+    auto m_n = m_v.inverse().transposed();
+    for (unsigned i = 0; i < n_points; ++i) {
+      surface.VV.push_back(m_v * profile[i].V);
+      surface.VN.push_back(-1.0 * m_n * profile[i].N);
+    }
+  }
 
-  cerr
-      << "\t>>> makeSurfRev called (but not implemented).\n\t>>> Returning empty surface."
-      << endl;
-
+  for (unsigned step = 0; step < steps; ++step) {
+    auto offset1 = step ? (step - 1) * n_points : (steps - 1) * n_points;
+    auto offset2 = step * n_points;
+    for (unsigned i = 0; i + 1 < n_points; ++i) {
+      surface.VF.emplace_back(offset1 + i, offset2 + i + 1, offset2 + i);
+      surface.VF.emplace_back(offset1 + i, offset1 + i + 1, offset2 + i + 1);
+    }
+  }
   return surface;
 }
 
