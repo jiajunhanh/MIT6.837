@@ -67,18 +67,35 @@ Surface makeSurfRev(const Curve &profile, unsigned steps) {
 
 Surface makeGenCyl(const Curve &profile, const Curve &sweep) {
   Surface surface;
-  surface = quad();
 
   if (!checkFlat(profile)) {
     cerr << "genCyl profile curve must be flat on xy plane." << endl;
     exit(0);
   }
 
-  // TODO: Here you should build the surface.  See surf.h for details.
+  auto sz_profile = unsigned(profile.size());
+  auto sz_sweep = unsigned(sweep.size());
 
-  cerr
-      << "\t>>> makeGenCyl called (but not implemented).\n\t>>> Returning empty surface."
-      << endl;
+  for (unsigned i = 0; i < sz_sweep; ++i) {
+    auto m_v = Matrix4f(Vector4f(sweep[i].N, 0.0),
+                        Vector4f(sweep[i].B, 0.0),
+                        Vector4f(sweep[i].T, 0.0),
+                        Vector4f(sweep[i].V, 1.0));
+    auto m_n = m_v.getSubmatrix3x3(0, 0).inverse().transposed();
+    for (unsigned j = 0; j < sz_profile; ++j) {
+      surface.VV.push_back((m_v * Vector4f(profile[j].V, 1.0)).xyz());
+      surface.VN.push_back(-1.0 * m_n * profile[j].N);
+    }
+  }
+
+  for (unsigned i = 0; i < sz_sweep; ++i) {
+    auto offset1 = i ? (i - 1) * sz_profile : (sz_sweep - 1) * sz_profile;
+    auto offset2 = i * sz_profile;
+    for (unsigned j = 0; j + 1 < sz_profile; ++j) {
+      surface.VF.emplace_back(offset1 + j, offset2 + j + 1, offset2 + j);
+      surface.VF.emplace_back(offset1 + j, offset1 + j + 1, offset2 + j + 1);
+    }
+  }
 
   return surface;
 }
