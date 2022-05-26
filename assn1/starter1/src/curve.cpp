@@ -21,12 +21,12 @@ const Matrix4f bez_mat{
 
 const auto bez_mat_inverse = bez_mat.inverse();
 
-const auto bsp_mat = Matrix4f{
+const auto bsp_mat = 1.0f / 6.0f * Matrix4f{
     1, -3, 3, -1,
     4, 0, -6, 3,
     1, 3, 3, -3,
     0, 0, 0, 1
-} /= 6.f;
+};
 
 const Matrix4f derivative_mat{
     0, 0, 0, 0,
@@ -73,6 +73,8 @@ Curve evalBezier(const vector<Vector3f> &P, unsigned steps) {
 
   Curve bez_curve{};
 
+  Vector3f N{};
+  Vector3f B{};
   auto n_ctr_points = P.size();
   for (auto piece = 0; piece + 3 < n_ctr_points; piece += 3) {
     Matrix4f geometry_mat{};
@@ -82,9 +84,6 @@ Curve evalBezier(const vector<Vector3f> &P, unsigned steps) {
     }
 
     auto trans_mat = geometry_mat * bez_mat;
-    Vector3f N{};
-    Vector3f B{};
-
     // Make sure to draw the first curve point.
     unsigned start_step = piece == 0 ? 0 : 1;
     for (unsigned step = start_step; step <= steps; ++step) {
@@ -99,7 +98,7 @@ Curve evalBezier(const vector<Vector3f> &P, unsigned steps) {
       Vector3f T{T_tmp[0], T_tmp[1], T_tmp[2]};
       T = T.normalized();
 
-      if (step == start_step) {
+      if (piece == 0 && step == 0) {
         // To make sure that when the curve is on xy plane, the N will also be on xy plane.
         B = Vector3f{0.f, 0.f, 1.f};
         if (T == B) {
